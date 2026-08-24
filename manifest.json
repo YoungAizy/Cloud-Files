@@ -1,16 +1,42 @@
 {
     "name": "Cloud Save",
     "description": "An file capture tool that combines a Chrome extension with a FastAPI backend to securely transfer internet files to users' Google Drive accounts.",
-    "version": "1.0",
+    "version": "0.1.0",
     "manifest_version": 3,
-    "action": {
-      "default_popup": "index.html",
-      "default_title": "DriveDrop"
-    },
     "permissions": [
+        "contextMenus",
+        "activeTab",
+
+        "identity",
         "storage"
-      ],
-      "host_permissions": [
+    ],
+    "host_permissions": [
+        "<all_urls>",
         "http://localhost:8000/*"
-      ]
+    ],
+    "background": {
+        "service_worker": "background.js"
+    },
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "popup-template.html",
+                "notification.css"
+            ],
+            "matches": ["<all_urls>"]
+        }
+    ],
+    "content_scripts": [
+        {
+          "matches": ["<all_urls>"],
+          "js": ["content.js"],
+          "run_at": "document_idle"
+        }
+    ],
+    "oauth2": {
+        "client_id": "1080669901350-3p07uc4ar2a06a5ipir11j7k964io37e.apps.googleusercontent.com",
+        "scopes": [
+          "https://www.googleapis.com/auth/drive.file"
+        ]
+      }
   }
