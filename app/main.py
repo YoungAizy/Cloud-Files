@@ -7,6 +7,7 @@ from fastapi import FastAPI, HTTPException
 from dotenv import load_dotenv
 
 from app.models import DownloadRequest
+from app.drive_upload import upload_g_drive
 
 load_dotenv()
 
@@ -33,11 +34,13 @@ async def download_file(request: DownloadRequest):
         if not filename:
             filename = f"{uuid.uuid4()}"
 
-        object_name = f"./{filename}"
+        object_name = f"drive-drop/{filename}"
         if response.status_code == 200:
-            await save_file(
-                response,
-                object_name
+            upload_g_drive(
+                request.access_token,
+                object_name,
+                response.content, 
+                response.headers.get("content-type")
             )
 
         return {
