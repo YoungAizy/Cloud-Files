@@ -34,18 +34,17 @@ async def download_file(request: DownloadRequest):
         if not filename:
             filename = f"{uuid.uuid4()}"
 
-        object_name = f"drive-drop/{filename}"
         if response.status_code == 200:
-            upload_g_drive(
+            uploaded = upload_g_drive(
                 request.access_token,
-                object_name,
+                filename,
                 response.content, 
                 response.headers.get("content-type")
             )
 
         return {
             "success": True,
-            "object_name": object_name
+            "object": uploaded
         }
 
     except Exception as e:
