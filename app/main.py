@@ -24,23 +24,21 @@ async def download_file(request: DownloadRequest):
             follow_redirects=True,
             timeout=300
         ) as client:
+            async with client.stream("GET", str(request.url), follow_redirects=True) as response:
+                response.raise_for_status()
 
-            response = await client.get(str(request.url))
+                filename = request.url.path.split("/")[-1]
 
-            response.raise_for_status()
-
-        filename = request.url.path.split("/")[-1]
-
-        if not filename:
-            filename = f"{uuid.uuid4()}"
-
-        if response.status_code == 200:
-            uploaded = upload_g_drive(
-                request.access_token,
-                filename,
-                response.content, 
-                response.headers.get("content-type")
-            )
+                if not filename:
+                    filename = f"{uuid.uuid4()}"
+                
+                if response.status_code == 200:
+                    uploaded = await upload_g_drive(
+                        request.access_token,
+                        filename,
+                        response.headers.get("content-type", "application/octet-stream"), 
+                        response
+                    )
 
         return {
             "success": True,
@@ -52,9 +50,3 @@ async def download_file(request: DownloadRequest):
             status_code=500,
             detail=str(e)
         )
-
-
-async def save_file(response,name):
-    async with aiofiles.open(name, "wb") as out_file:
-        async for chunk in response.aiter_bytes(chunk_size=1024 * 64): # 64KB chunks
-            await out_file.write(chunk)
