@@ -2,7 +2,7 @@ import os
 import uuid
 import httpx
 import aiofiles
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, status
 
 from dotenv import load_dotenv
 
@@ -45,8 +45,13 @@ async def download_file(request: DownloadRequest):
             "object": uploaded
         }
 
-    except Exception as e:
+    except ValueError as e:
+        raise HTTPException(
+            status_code= status.HTTP_413_CONTENT_TOO_LARGE,
+            detail= f"Upload Failed: {e}"
+        )
+    except Exception as ex:
         raise HTTPException(
             status_code=500,
-            detail=str(e)
+            detail=str(ex)
         )

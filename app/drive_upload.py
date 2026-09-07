@@ -12,6 +12,8 @@ DRIVE_UPLOAD_URL = (
 CHUNK_SIZE = (8 * 1024 * 1024) * 2  # 16 MiB
 QUEUE_SIZE = 3
 MAX_QUEUE_SIZE = 6
+# Limit files to 1GiB
+FILE_LIMIT = (100 * 1024 * 1024) * 10
 
 
 def get_g_service(access_token):
@@ -110,6 +112,9 @@ async def upload_g_drive(access_token: str, filename: str, file_type:str, respon
     content_length = response.headers.get("content-length")
     content_length = content_length if content_length else  "*"
     
+    if int(content_length) > FILE_LIMIT:
+        raise ValueError("File size exceeds the limit of 1GB per download.")
+    
     queue = asyncio.Queue(maxsize=QUEUE_SIZE)
     
     async with httpx.AsyncClient(
@@ -170,7 +175,7 @@ async def upload_g_drive(access_token: str, filename: str, file_type:str, respon
                     queue.task_done()
 
 
-        downloader_task = asyncio.create_task(file_stream.downloader(CHUNK_SIZE))
+        downloader_task = asyncio.create_task(file_stream.downloader(CHUNK_SIZE, FILE_LIMIT))
         uploader_task = asyncio.create_task(uploader())
 
         try:
