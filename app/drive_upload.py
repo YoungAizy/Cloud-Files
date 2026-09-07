@@ -112,7 +112,7 @@ async def upload_g_drive(access_token: str, filename: str, file_type:str, respon
     content_length = response.headers.get("content-length")
     content_length = content_length if content_length else  "*"
     
-    if int(content_length) > FILE_LIMIT:
+    if content_length != "*" and int(content_length) > FILE_LIMIT:
         raise ValueError("File size exceeds the limit of 1GB per download.")
     
     queue = asyncio.Queue(maxsize=QUEUE_SIZE)
@@ -179,20 +179,27 @@ async def upload_g_drive(access_token: str, filename: str, file_type:str, respon
         uploader_task = asyncio.create_task(uploader())
 
         try:
-            result = await uploader_task
-            await downloader_task
+            results = await asyncio.gather(
+                downloader_task,
+                uploader_task,
+            )
 
-            return result
+            return results[1]
 
         except Exception:
-            downloader_task.cancel()
+            # Stop whichever task is still running
+            for task in (downloader_task, uploader_task):
+                if not task.done():
+                    task.cancel()
 
-            try:
-                await downloader_task
-            except asyncio.CancelledError:
-                pass
+            # Wait for cancellation to actually finish
+            await asyncio.gather(
+                downloader_task,
+                uploader_task,
+                return_exceptions=True,
+            )
 
-            raise  
+            raise 
 
 def get_or_create_folder(service):
     """
