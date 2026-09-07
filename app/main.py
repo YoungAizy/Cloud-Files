@@ -1,13 +1,13 @@
 import os
 import uuid
 import httpx
-import aiofiles
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, BackgroundTasks
 
 from dotenv import load_dotenv
 
 from app.models import DownloadRequest
 from app.drive_upload import upload_g_drive
+from app.email_sender import send_completion_email
 
 load_dotenv()
 
@@ -18,6 +18,20 @@ async def health():
     return {"status": "ok"}
 
 @app.post("/downloads")
+def download(
+    request: DownloadRequest,
+    background_tasks: BackgroundTasks
+):
+    background_tasks.add_task(
+        download_file,
+        request
+    )
+
+    return {
+        "success": True,
+        "message": "Download started, an email will be sent to you once it finishes."
+    }
+
 async def download_file(request: DownloadRequest):
     try:
         async with httpx.AsyncClient(
@@ -40,18 +54,18 @@ async def download_file(request: DownloadRequest):
                         response
                     )
 
-        return {
-            "success": True,
-            "object": uploaded
-        }
+        send_completion_email(
+            request.access_token, True,
+            uploaded
+        )
 
     except ValueError as e:
-        raise HTTPException(
-            status_code= status.HTTP_413_CONTENT_TOO_LARGE,
-            detail= f"Upload Failed: {e}"
+        send_completion_email(
+            request.access_token, False,
+            f"Upload Failed: {e}"
         )
     except Exception as ex:
-        raise HTTPException(
-            status_code=500,
-            detail=str(ex)
+        send_completion_email(
+            request.access_token, False,
+            str(ex)
         )
