@@ -1,13 +1,14 @@
 import os
 import uuid
 import httpx
-from fastapi import FastAPI, BackgroundTasks
+from fastapi import FastAPI, BackgroundTasks, HTTPException, status
 
 from dotenv import load_dotenv
 
 from app.models import DownloadRequest
 from app.drive_upload import upload_g_drive
 from app.email_sender import send_completion_email
+from app.ssrf import validate_url
 
 load_dotenv()
 
@@ -18,10 +19,19 @@ async def health():
     return {"status": "ok"}
 
 @app.post("/downloads")
-def download(
+async def download(
     request: DownloadRequest,
     background_tasks: BackgroundTasks
 ):
+    try:
+        await validate_url(str(request.url))
+
+    except Exception as e:
+        raise HTTPException(
+            status_code = status.HTTP_400_BAD_REQUEST,
+            detail = str(e)
+        )
+        
     background_tasks.add_task(
         download_file,
         request
