@@ -8,7 +8,8 @@ from dotenv import load_dotenv
 from app.models import DownloadRequest
 from app.drive_upload import upload_g_drive
 from app.email_sender import send_completion_email
-from app.ssrf import validate_url
+from app.security.ssrf import validate_url
+from app.custom_errors import FileTooLargeError, GoogleUploadError
 
 load_dotenv()
 
@@ -33,7 +34,7 @@ async def download(
         )
         
     background_tasks.add_task(
-        download_file,
+        download_file_in_background,
         request
     )
 
@@ -42,7 +43,7 @@ async def download(
         "message": "Download started, an email will be sent to you once it finishes."
     }
 
-async def download_file(request: DownloadRequest):
+async def download_file_in_background(request: DownloadRequest):
     try:
         async with httpx.AsyncClient(
             follow_redirects=True,
@@ -69,13 +70,19 @@ async def download_file(request: DownloadRequest):
             uploaded
         )
 
-    except ValueError as e:
+    except (RuntimeError, FileTooLargeError, GoogleUploadError) as e:
         send_completion_email(
             request.access_token, False,
-            f"Upload Failed: {e}"
+            {
+                "download_link": request.url, 
+                "error": str(e)
+            }
         )
     except Exception as ex:
         send_completion_email(
             request.access_token, False,
-            str(ex)
+            {
+                "download_link": request.url, 
+                "error": "Something went wrong. An unexpected error occured."
+            }
         )
