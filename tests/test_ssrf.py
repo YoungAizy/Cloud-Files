@@ -6,7 +6,7 @@ import pytest
 import socket
 import ipaddress
 from unittest.mock import AsyncMock, MagicMock, patch
-from app.ssrf import (
+from app.security.ssrf import (
     is_unsafe,
     validate_url,
     resolve_hostname,

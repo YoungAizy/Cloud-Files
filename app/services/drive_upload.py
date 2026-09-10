@@ -3,11 +3,10 @@ from google.oauth2.credentials import Credentials
 
 import asyncio
 import httpx
-from app.httpx_stream import HTTPXStreamIterator
+from . import HTTPXStreamIterator
+from app.exceptions.custom_errors import FileTooLargeError, GoogleUploadError
 
-DRIVE_UPLOAD_URL = (
-    "https://www.googleapis.com/upload/drive/v3/files"
-)
+DRIVE_UPLOAD_URL = "https://www.googleapis.com/upload/drive/v3/files"
 
 CHUNK_SIZE = (8 * 1024 * 1024) * 2  # 16 MiB
 QUEUE_SIZE = 3
@@ -66,9 +65,7 @@ async def create_upload_session(
     upload_url = response.headers.get("Location")
 
     if not upload_url:
-        raise RuntimeError(
-            "Google Drive did not return an upload URL"
-        )
+        raise RuntimeError("Google Drive did not return an upload URL")
 
     return upload_url
 
@@ -113,7 +110,7 @@ async def upload_g_drive(access_token: str, filename: str, file_type:str, respon
     content_length = content_length if content_length else  "*"
     
     if content_length != "*" and int(content_length) > FILE_LIMIT:
-        raise ValueError("File size exceeds the limit of 1GB per download.")
+        raise FileTooLargeError("File size exceeds the limit of 1GB per download.")
     
     queue = asyncio.Queue(maxsize=QUEUE_SIZE)
     
@@ -160,17 +157,13 @@ async def upload_g_drive(access_token: str, filename: str, file_type:str, respon
                         continue
 
                     # 200 / 201 = upload completed.
-                    if drive_response.status_code in (
-                        200,
-                        201,
-                    ):
+                    if drive_response.status_code in (200,201):
                         created_file = drive_response.json()
 
                         return {"uploaded_name": created_file.get("name"), 
                                 "webViewLink": created_file.get("webViewLink")}
                 except Exception as e:    
-                    raise RuntimeError("Google Drive upload failed"
-                    ) from e 
+                    raise GoogleUploadError("Google Drive upload failed") from e 
                 finally:
                     queue.task_done()
 

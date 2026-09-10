@@ -1,4 +1,4 @@
-
+from app.exceptions.custom_errors import FileTooLargeError
 
 class HTTPXStreamIterator():
     """
@@ -17,12 +17,11 @@ class HTTPXStreamIterator():
             downloaded += len(data)
             
             if downloaded > LIMIT:
-                raise ValueError("File exceeded the size limit of 1GB while streaming.")
+                raise FileTooLargeError("File exceeded the size limit of 1GB while streaming.")
             
             while len(buffer) >= min(CHUNK_SIZE, 1):
                 chunk = bytes(buffer[:CHUNK_SIZE])
                 del buffer[:CHUNK_SIZE]
-                
 
                 await self.queue.put(chunk)
 

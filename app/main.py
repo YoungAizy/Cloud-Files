@@ -6,10 +6,10 @@ from fastapi import FastAPI, BackgroundTasks, HTTPException, status
 from dotenv import load_dotenv
 
 from app.models import DownloadRequest
-from app.drive_upload import upload_g_drive
-from app.email_sender import send_completion_email
+from app.services.drive_upload import upload_g_drive
+from app.services.email_sender import send_completion_email
 from app.security.ssrf import validate_url
-from app.custom_errors import FileTooLargeError, GoogleUploadError
+from app.exceptions.custom_errors import FileTooLargeError, GoogleUploadError
 
 load_dotenv()
 
