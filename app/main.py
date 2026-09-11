@@ -11,7 +11,7 @@ from app.services.email_sender import send_completion_email
 from app.security.ssrf import validate_url
 from app.exceptions.custom_errors import FileTooLargeError, GoogleUploadError
 
-from middleware.authentication import get_access_token
+from app.middleware.authentication import get_access_token
 
 load_dotenv()
 

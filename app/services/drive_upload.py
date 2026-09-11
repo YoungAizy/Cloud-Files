@@ -3,7 +3,7 @@ from google.oauth2.credentials import Credentials
 
 import asyncio
 import httpx
-from . import HTTPXStreamIterator
+from app.services.httpx_stream import HTTPXStreamIterator
 from app.exceptions.custom_errors import FileTooLargeError, GoogleUploadError
 
 DRIVE_UPLOAD_URL = "https://www.googleapis.com/upload/drive/v3/files"

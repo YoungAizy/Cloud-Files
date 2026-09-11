@@ -1,7 +1,7 @@
 import ipaddress
 import socket
 from urllib.parse import urlparse
-from exceptions.custom_errors import UnsafeURLError
+from app.exceptions.custom_errors import UnsafeURLError
 
 
 ALLOWED_SCHEMES = {"http", "https"}
