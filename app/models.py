@@ -3,4 +3,4 @@ from pydantic import BaseModel, HttpUrl
 
 class DownloadRequest(BaseModel):
     url: HttpUrl
-    access_token: str
+    filename: str
