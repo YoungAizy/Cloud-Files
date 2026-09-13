@@ -29,7 +29,7 @@ def get_body_and_subject(is_successful: bool, payload_data) -> tuple[str, str]:
         subject = f"{sub} Successful"
         body = (
             f"Your file has been successfully downloaded to Google Drive.\n\n"
-            f"File Name: {payload_data['uploaded_name']}\n"
+            f"File Name: {payload_data['uploaded_name']}\n\n"
             f"View Link: {payload_data['webViewLink']}\n\n"
             "Thank you for using Drive-Drop!"
         )
@@ -37,7 +37,7 @@ def get_body_and_subject(is_successful: bool, payload_data) -> tuple[str, str]:
         subject = f"{sub} Failed"
         body = (
             f"Oops! We ran into an error while downloading your file `{payload_data['filename']}` to Google Drive.\n\n"
-            f"Download Link: {payload_data['download_link']}\n"
+            f"Download Link: {payload_data['download_link']}\n\n"
             f"Error: {payload_data['error']}\n\n"
             "Please try again or contact support."
         )
@@ -45,7 +45,7 @@ def get_body_and_subject(is_successful: bool, payload_data) -> tuple[str, str]:
     return subject, body
 
 async def send_completion_email(access_token: str, is_successful: bool, payload_data):
-    user_email = get_user_email(access_token)
+    user_email = await get_user_email(access_token)
     subject, body = get_body_and_subject(is_successful, payload_data)
     
     message = EmailMessage()
