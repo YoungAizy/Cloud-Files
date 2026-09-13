@@ -17,7 +17,7 @@ FILE_LIMIT = (100 * 1024 * 1024) * 10
 
 def get_g_service(access_token):
     credentials = Credentials(
-        token=access_token
+        token = access_token
     )
 
     service = build(

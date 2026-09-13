@@ -2,6 +2,7 @@ import os
 import uuid
 import httpx
 from fastapi import FastAPI, BackgroundTasks, HTTPException, status, Depends
+from fastapi.middleware.cors import CORSMiddleware
 
 from dotenv import load_dotenv
 
@@ -15,7 +16,19 @@ from app.middleware.authentication import get_access_token
 
 load_dotenv()
 
+EXTENSION_ID = os.environ['EXTENSION_ID']
+
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        f"chrome-extension://{EXTENSION_ID}"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/health")
 async def health():
@@ -69,13 +82,13 @@ async def download_file_in_background(request: DownloadRequest, access_token: st
                         response
                     )
 
-        send_completion_email(
+        await send_completion_email(
             access_token, True,
             uploaded
         )
 
     except (RuntimeError, FileTooLargeError, GoogleUploadError) as e:
-        send_completion_email(
+        await send_completion_email(
             access_token, False,
             {
                 "download_link": request.url,
@@ -84,7 +97,7 @@ async def download_file_in_background(request: DownloadRequest, access_token: st
             }
         )
     except Exception as ex:
-        send_completion_email(
+        await send_completion_email(
             access_token, False,
             {
                 "download_link": request.url,
