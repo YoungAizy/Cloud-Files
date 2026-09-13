@@ -32,32 +32,28 @@ async def validate_url(url: str):
 
     hostname = parsed.hostname
 
-    # If the hostname itself is an IP address, validate it directly.
     try:
+        addresses = await resolve_hostname(hostname)
+
+        if not addresses:
+            raise ValueError("Hostname did not resolve to an IP address")
+
+        # Check EVERY resolved address.
+        for ip in addresses:
+            if is_unsafe(ip):
+                raise UnsafeURLError("URL resolves to a private or reserved IP address")
+
+        return
+    except socket.gaierror:
+            raise ValueError("Unable to resolve hostname")
+    except ValueError as e:
+        # If the hostname itself is an IP address, validate it directly.
         ip = ipaddress.ip_address(hostname)
 
         if is_unsafe(str(ip)):
             raise UnsafeURLError("URLs pointing to private or reserved IP addresses are not allowed")
-
-        return
-
-    except UnsafeURLError as e:
-        # Important: If it was a valid IP but private, preserve our error.
+    except Exception as ex:
         raise
-
-    # Resolve hostname
-    try:
-        addresses = await resolve_hostname(hostname)
-    except socket.gaierror:
-        raise ValueError("Unable to resolve hostname")
-
-    if not addresses:
-        raise ValueError("Hostname did not resolve to an IP address")
-
-    # Check EVERY resolved address.
-    for ip in addresses:
-        if is_unsafe(ip):
-            raise UnsafeURLError("URL resolves to a private or reserved IP address")
 
 
 async def resolve_hostname(hostname: str):
