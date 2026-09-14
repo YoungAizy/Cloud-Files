@@ -1,11 +1,14 @@
-async function uploadToDrive(url,filename,access_token){
-    
+import {CONFIG} from './config.js';
+
+const BASE_URL = CONFIG.BACKEND_URL;
+
+export async function uploadToDrive(url,filename,access_token){
         try {
-            const body = {
+            const body = JSON.stringify({
                 url, filename
-            }
+            });
     
-            const uploadResponse = await fetch('http://localhost:8000/downloads', {
+            const uploadResponse = await fetch(`${BASE_URL}/downloads`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${access_token}`,
@@ -19,10 +22,8 @@ async function uploadToDrive(url,filename,access_token){
             }
     
             const result = await uploadResponse.json();
-            console.info('File uploaded successfully:', result);
             return result;
         } catch (error) {
-            console.error('Error downloading file to Google Drive:', error);
             return {success: false, message: error}
         }
 }
