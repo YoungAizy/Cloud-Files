@@ -3,3 +3,11 @@ app/__pycache__
 app/*/__pycache__
 tests/__pycache__
 .env
+
+# Terraform
+infrastructure/.terraform
+infrastructure/.terraform.*
+infrastructure/*.tfplan
+infrastructure/*.tfstate
+infrastructure/*.tfstate.*
+infrastructure/*.tfvars
