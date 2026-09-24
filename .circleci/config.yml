@@ -4,7 +4,7 @@ orbs:
   python: circleci/python@4.0.0
 
 jobs:
-  build-and-test:
+  code-linter:
     docker:
       - image: cimg/python:3.11
 
@@ -13,7 +13,8 @@ jobs:
       
       - python/install-packages:
           pkg-manager: pip
-          pip-dependency-file: test-requirements.txt  # if you have a different name for your requirements file, maybe one that combines your runtime and test requirements.
+          pip-dependency-file: test-requirements.txt  
+          args: 'ruff'
       
       - run:
           name: Run Ruff Linter
@@ -27,6 +28,8 @@ workflows:
   deploy-to-aws: # This is the name of the workflow, feel free to change it to better match your workflow.
     # Inside the workflow, you define the jobs you want to run.
     jobs:
-      - build-and-test
+      - code-linter
       - python/test:
           test-tool: pytest
+          requires:
+            - code-linter
