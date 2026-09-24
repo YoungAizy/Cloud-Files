@@ -1,6 +1,7 @@
 from app.exceptions.custom_errors import FileTooLargeError
 
-class HTTPXStreamIterator():
+
+class HTTPXStreamIterator:
     """
     Wraps an HTTPX response byte-stream chunk
     """

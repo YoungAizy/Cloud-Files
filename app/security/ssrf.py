@@ -1,8 +1,8 @@
 import ipaddress
 import socket
 from urllib.parse import urlparse
-from app.exceptions.custom_errors import UnsafeURLError
 
+from app.exceptions.custom_errors import UnsafeURLError
 
 ALLOWED_SCHEMES = {"http", "https"}
 
@@ -46,13 +46,13 @@ async def validate_url(url: str):
         return
     except socket.gaierror:
             raise ValueError("Unable to resolve hostname")
-    except ValueError as e:
+    except ValueError:
         # If the hostname itself is an IP address, validate it directly.
         ip = ipaddress.ip_address(hostname)
 
         if is_unsafe(str(ip)):
             raise UnsafeURLError("URLs pointing to private or reserved IP addresses are not allowed")
-    except Exception as ex:
+    except Exception:
         raise
 
 

@@ -1,18 +1,17 @@
 import os
 import uuid
+
 import httpx
-from fastapi import FastAPI, BackgroundTasks, HTTPException, status, Depends
+from dotenv import load_dotenv
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 
-from dotenv import load_dotenv
-
+from app.exceptions.custom_errors import FileTooLargeError, GoogleUploadError
+from app.middleware.authentication import get_access_token
 from app.models import DownloadRequest
+from app.security.ssrf import validate_url
 from app.services.drive_upload import upload_g_drive
 from app.services.email_sender import send_completion_email
-from app.security.ssrf import validate_url
-from app.exceptions.custom_errors import FileTooLargeError, GoogleUploadError
-
-from app.middleware.authentication import get_access_token
 
 load_dotenv()
 
@@ -43,10 +42,11 @@ async def download(
     try:
         await validate_url(str(request.url))
     except Exception as e:
+        
         raise HTTPException(
             status_code = status.HTTP_400_BAD_REQUEST,
             detail = str(e)
-        )
+        ) from e
         
     background_tasks.add_task(
         download_file_in_background,
@@ -65,22 +65,21 @@ async def download_file_in_background(request: DownloadRequest, access_token: st
         async with httpx.AsyncClient(
             follow_redirects=True,
             timeout=300
-        ) as client:
-            async with client.stream("GET", str(request.url), follow_redirects=False) as response:
-                response.raise_for_status()
+        ) as client, client.stream("GET", str(request.url), follow_redirects=False) as response:
+            response.raise_for_status()
 
-                filename = request.url.path.split("/")[-1] if not filename else filename
+            filename = request.url.path.split("/")[-1] if not filename else filename
 
-                if not filename:
-                    filename = f"{uuid.uuid4()}"
+            if not filename:
+                filename = f"{uuid.uuid4()}"
                 
-                if response.status_code == 200:
-                    uploaded = await upload_g_drive(
-                        access_token,
-                        filename,
-                        response.headers.get("content-type", "application/octet-stream"), 
-                        response
-                    )
+            if response.status_code == 200:
+                uploaded = await upload_g_drive(
+                    access_token,
+                    filename,
+                    response.headers.get("content-type", "application/octet-stream"), 
+                    response
+                )
 
         await send_completion_email(
             access_token, True,
@@ -96,7 +95,8 @@ async def download_file_in_background(request: DownloadRequest, access_token: st
                 "error": str(e)
             }
         )
-    except Exception as ex:
+    except Exception:
+
         await send_completion_email(
             access_token, False,
             {
@@ -105,3 +105,4 @@ async def download_file_in_background(request: DownloadRequest, access_token: st
                 "error": "Something went wrong. An unexpected error occured."
             }
         )
+        raise
