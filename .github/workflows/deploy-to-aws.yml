@@ -6,32 +6,97 @@ on:
   pull_request:
     branches: [ "backend" ]
 
+# Permissions required for fetching the AWS OIDC JWT token
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
-
   build:
-
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        # Define the two command variations you want to run
+        check_type: ["check", "format --check"]
+
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-test.txt
+
+      - name: Ruff (Lint & Format Check)
+        uses: astral-sh/ruff-action@v3
+        with:
+          args: "${{matrix.check_type}} app/"
+
+      - name: Run Pytest Suite
+        run: |
+          pytest
+
+  deploy:
+    name: Deploy to Cloud
+    needs: build
+    if: github.ref == 'refs/heads/backend' && github.event_name == 'push'
+    runs-on: ubuntu-latest
     
-    - uses: actions/checkout@v4
-    - name: Install uv
-      uses: astral-sh/setup-uv@v5
-      with:
-        enable-cache: true # Instantly caches dependencies to speed up future runs
-        cache-dependency-glob: "pyproject.toml"
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version-file: "pyproject.toml"
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.16.3"
 
-    - name: Run Ruff (Lint & Format Check)
-      run: |
-        uv ruff check src/
-        uv ruff format --check src/
-    - name: Run Pytest Suite
-      run: |
-        uv run pytest
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+      # --- Authenticate securely using OIDC ---
+      - name: Authenticate to AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Log in to AWS ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and Push Docker Image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ vars.AWS_REPOSITORY}}
+          IMAGE_TAG: ${{ vars.IMAGE_TAG }}
+        run: |
+          docker build . -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f docker/Dockerfile
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+      # --- Deploy Infrastructure via Terraform ---
+      - name: Terraform Init
+        run: terraform -chdir=infrastructure init
+
+      - name: Terraform Validate
+        run: terraform -chdir=infrastructure validate
+
+      - name: Terraform Plan
+        env:
+          TF_VAR_extension_id: ${{ vars.EXTENSION_ID }} 
+          TF_VAR_image_tag: ${{ vars.IMAGE_TAG }} 
+          TF_VAR_aws_region: ${{ vars.AWS_REGION }}
+          TF_VAR_github_profile: ${{ github.repository_owner }} 
+          TF_VAR_github_repository: ${{ github.event.repository.name }}
+        run: |
+          terraform -chdir=infrastructure plan \
+          -out="deployment.tfplan"
+
+      - name: Terraform Apply 
+        run: |
+          terraform -chdir=infrastructure apply \
+          -input=false "deployment.tfplan"
