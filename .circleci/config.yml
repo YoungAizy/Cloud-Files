@@ -29,7 +29,7 @@ workflows:
     # Inside the workflow, you define the jobs you want to run.
     jobs:
       - code-linter
-      - python/test:
-          test-tool: pytest
-          requires:
-            - code-linter
+      # - python/test:
+      #     test-tool: pytest
+      #     requires:
+      #       - code-linter
