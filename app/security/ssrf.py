@@ -45,13 +45,15 @@ async def validate_url(url: str):
 
         return
     except socket.gaierror:
-            raise ValueError("Unable to resolve hostname")
+        raise ValueError("Unable to resolve hostname")
     except ValueError:
         # If the hostname itself is an IP address, validate it directly.
         ip = ipaddress.ip_address(hostname)
 
         if is_unsafe(str(ip)):
-            raise UnsafeURLError("URLs pointing to private or reserved IP addresses are not allowed")
+            raise UnsafeURLError(
+                "URLs pointing to private or reserved IP addresses are not allowed"
+            )
     except Exception:
         raise
 
@@ -60,12 +62,7 @@ async def resolve_hostname(hostname: str):
     loop = __import__("asyncio").get_running_loop()
 
     results = await loop.run_in_executor(
-        None,
-        lambda: socket.getaddrinfo(
-            hostname,
-            None,
-            type=socket.SOCK_STREAM
-        )
+        None, lambda: socket.getaddrinfo(hostname, None, type=socket.SOCK_STREAM)
     )
 
     addresses = set()

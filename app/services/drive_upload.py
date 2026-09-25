@@ -17,42 +17,30 @@ FILE_LIMIT = (100 * 1024 * 1024) * 10
 
 
 def get_g_service(access_token):
-    credentials = Credentials(
-        token = access_token
-    )
+    credentials = Credentials(token=access_token)
 
-    service = build(
-        "drive",
-        "v3",
-        credentials=credentials
-    )
+    service = build("drive", "v3", credentials=credentials)
     return service
+
 
 async def create_upload_session(
     client: httpx.AsyncClient,
     access_token: str,
     filename: str,
     content_type: str,
-    parent: str
-)-> str:
+    parent: str,
+) -> str:
     """
     Tell Google Drive that we're about to upload a file.
 
     Google responds with a temporary upload URL.
     """
-    
-    metadata = {
-        "name": filename,
-        "mimeType": content_type,
-        "parents": [parent]
-    }
-    
+
+    metadata = {"name": filename, "mimeType": content_type, "parents": [parent]}
+
     response = await client.post(
         DRIVE_UPLOAD_URL,
-        params={
-            "uploadType": "resumable",
-            "fields":"id,name,webViewLink"
-        },
+        params={"uploadType": "resumable", "fields": "id,name,webViewLink"},
         headers={
             "Authorization": f"Bearer {access_token}",
             "Content-Type": "application/json; charset=UTF-8",
@@ -70,6 +58,7 @@ async def create_upload_session(
 
     return upload_url
 
+
 async def upload_chunk(
     client: httpx.AsyncClient,
     upload_url: str,
@@ -83,55 +72,53 @@ async def upload_chunk(
     """
 
     end = start + len(chunk) - 1
-    
+
     response = await client.put(
         upload_url,
         headers={
             "Authorization": f"Bearer {access_token}",
             "Content-Length": str(len(chunk)),
-            "Content-Range": (
-                f"bytes {start}-{end}/{total_size}"
-            ),
+            "Content-Range": (f"bytes {start}-{end}/{total_size}"),
         },
         content=chunk,
         timeout=300,
     )
-    
+
     if response.status_code not in (200, 201, 308):
         response.raise_for_status()
 
     return response
 
-async def upload_g_drive(access_token: str, filename: str, file_type:str, response: httpx.Response):
-    
+
+async def upload_g_drive(
+    access_token: str, filename: str, file_type: str, response: httpx.Response
+):
+
     service = get_g_service(access_token)
     folder_id = get_or_create_folder(service)
-    
+
     content_length = response.headers.get("content-length")
-    content_length = content_length if content_length else  "*"
-    
+    content_length = content_length if content_length else "*"
+
     if content_length != "*" and int(content_length) > FILE_LIMIT:
         raise FileTooLargeError("File size exceeds the limit of 1GB per download.")
-    
-    queue = asyncio.Queue(maxsize=QUEUE_SIZE)
-    
-    async with httpx.AsyncClient(
-        timeout=300
-    ) as drive_client:
 
+    queue = asyncio.Queue(maxsize=QUEUE_SIZE)
+
+    async with httpx.AsyncClient(timeout=300) as drive_client:
         upload_url = await create_upload_session(
             client=drive_client,
             access_token=access_token,
             filename=filename,
             content_type=file_type,
-            parent = folder_id
+            parent=folder_id,
         )
 
         # -----------------------------------------------------
         # 2. Read the source file in chunks
         # -----------------------------------------------------
 
-        file_stream = HTTPXStreamIterator(response,queue)
+        file_stream = HTTPXStreamIterator(response, queue)
 
         async def uploader():
             uploaded_bytes = 0
@@ -158,18 +145,21 @@ async def upload_g_drive(access_token: str, filename: str, file_type:str, respon
                         continue
 
                     # 200 / 201 = upload completed.
-                    if drive_response.status_code in (200,201):
+                    if drive_response.status_code in (200, 201):
                         created_file = drive_response.json()
 
-                        return {"uploaded_name": created_file.get("name"), 
-                                "webViewLink": created_file.get("webViewLink")}
-                except Exception as e:    
-                    raise GoogleUploadError("Google Drive upload failed") from e 
+                        return {
+                            "uploaded_name": created_file.get("name"),
+                            "webViewLink": created_file.get("webViewLink"),
+                        }
+                except Exception as e:
+                    raise GoogleUploadError("Google Drive upload failed") from e
                 finally:
                     queue.task_done()
 
-
-        downloader_task = asyncio.create_task(file_stream.downloader(CHUNK_SIZE, FILE_LIMIT))
+        downloader_task = asyncio.create_task(
+            file_stream.downloader(CHUNK_SIZE, FILE_LIMIT)
+        )
         uploader_task = asyncio.create_task(uploader())
 
         try:
@@ -193,7 +183,8 @@ async def upload_g_drive(access_token: str, filename: str, file_type:str, respon
                 return_exceptions=True,
             )
 
-            raise 
+            raise
+
 
 def get_or_create_folder(service):
     """
@@ -202,23 +193,27 @@ def get_or_create_folder(service):
     """
     # 1. Build the search query ensuring we only look for active folders matching the name
     query = "name = 'Drive-Drop' and mimeType = 'application/vnd.google-apps.folder' and trashed = false"
-    results = service.files().list(
-        q=query,
-        spaces="drive", 
-        fields="files(id, name)"
-    ).execute()
-    
+    results = (
+        service.files()
+        .list(q=query, spaces="drive", fields="files(id, name)")
+        .execute()
+    )
+
     files = results.get("files", [])
     # 2. If folder exists, return its ID
     if files:
         return files[0]["id"]
-    
-    new_folder = service.files().create(
-        body={
-            "name": "Drive-Drop",
-            "mimeType": "application/vnd.google-apps.folder"
-        },
-        fields="id"
-    ).execute()
-    
+
+    new_folder = (
+        service.files()
+        .create(
+            body={
+                "name": "Drive-Drop",
+                "mimeType": "application/vnd.google-apps.folder",
+            },
+            fields="id",
+        )
+        .execute()
+    )
+
     return new_folder.get("id")
