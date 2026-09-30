@@ -49,7 +49,22 @@ jobs:
           command: |
             set -x
 
-            docker run -e "HOST=0.0.0.0" $ECR_REGISTRY/$ecr_repo_name:$image_tag ping -V
+            docker run -d -p 8000:8000 -e "HOST=0.0.0.0" --name test_app $ECR_REGISTRY/$ecr_repo_name:$image_tag
+
+            sleep 5
+
+            curl --fail http://localhost:8000/health
+            CURL_STATUS=$?
+
+            docker stop test_app && docker rm test_app
+
+            if [ $CURL_STATUS -ne 0 ]; then
+              echo "Health check failed!"
+              exit 1
+            else
+              echo "Health check passed successfully!"
+              exit 0
+            fi
 
             set +x
       - aws-ecr/push_image:
