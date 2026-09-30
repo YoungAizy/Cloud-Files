@@ -22,7 +22,7 @@ resource "aws_iam_role" "github_actions_oidc" {
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
           StringEquals = {
-            "token.actions.githubusercontent.com:aud" = "://amazonaws.com"
+            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
           }
           StringLike = {
             # Restricts role assumption strictly to your repository's main branch
