@@ -7,9 +7,9 @@ module "aws_backend" {
   extension_id = var.extension_id
 }
 
-module "github_setup" {
-  source = "./modules/github"
+# module "github_setup" {
+#   source = "./modules/github"
 
-  github_profile   = var.github_profile
-  github_repo_name = var.github_repo_name
-}
+#   github_profile   = var.github_profile
+#   github_repo_name = var.github_repo_name
+# }
