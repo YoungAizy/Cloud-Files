@@ -79,7 +79,7 @@ resource "aws_iam_role" "lambda_exec_role" {
     Statement = [{
       Action    = "sts:AssumeRole"
       Effect    = "Allow"
-      Principal = { Service = "lambda.amazonaws.com" }
+      # Principal = { Service = "lambda.amazonaws.com" }
     }]
   })
 }
@@ -88,6 +88,27 @@ resource "aws_iam_role" "lambda_exec_role" {
 resource "aws_iam_role_policy_attachment" "lambda_logs" {
   role       = aws_iam_role.lambda_exec_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_ecr_repository_policy" "lambda_ecr_policy" {
+  repository = aws_ecr_repository.docker_repo.name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowLambdaToPullImage"
+        Effect = "Allow"
+        Principal = {
+          AWS = aws_iam_role.lambda_exec_role.arn
+        }
+        Action = [
+          "ecr:BatchGetImage",
+          "ecr:GetDownloadUrlForLayer",
+        ]
+      }
+    ]
+  })
 }
 
 # 3. The Core Lambda Resource running your container image
@@ -109,7 +130,10 @@ resource "aws_lambda_function" "fastapi_lambda" {
     }
   }
 
-  depends_on = [aws_iam_role_policy_attachment.lambda_logs]
+  depends_on = [
+    aws_iam_role_policy_attachment.lambda_logs,
+    aws_ecr_repository_policy.lambda_ecr_policy
+  ]
 }
 
 # 4. HTTPS Endpoint Generator (Lambda Function URL)
