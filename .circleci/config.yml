@@ -90,10 +90,6 @@ jobs:
       - terraform/fmt:
           path: ./infrastructure
       - terraform/plan:
-          path: ./infrastructure
-      - terraform/apply:
-          path: ./infrastructure
-      - terraform/plan:
           out: 'deployment.tfplan'
           path: ./infrastructure
           var: >-
