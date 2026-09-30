@@ -34,6 +34,7 @@ jobs:
       - checkout
       
       - aws-ecr/build_and_push_image:
+          account_id: $AWS_ACC_ID
           auth:
             - aws-cli/setup:
                 role_arn: $AWS_ROLE_ARN
