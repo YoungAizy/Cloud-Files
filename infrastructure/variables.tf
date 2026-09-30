@@ -25,6 +25,18 @@ variable "extension_id" {
   description = "The ID of the chrome extension calling this api service."
 }
 
+# --- Backend Configuration ---
+variable "bucket_name" {
+  type        = string
+  description = "The name of the AWS S3 bucket storing terraform state file."
+}
+
+variable "key_name" {
+  type        = string
+  description = "Path inside the bucket where the file will sit"
+  default     = "terraform.tfstate"
+}
+
 # --- Github Configuration ---
 variable "github_profile" {
   type        = string
