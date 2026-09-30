@@ -2,6 +2,9 @@ version: 2.1
 
 orbs:
   python: circleci/python@4.0.0
+  aws-cli: circleci/aws-cli@5.1
+  aws-ecr: circleci/aws-ecr@9.0
+  terraform: circleci/terraform@3.7.0
 
 jobs:
   code-linter:
@@ -23,6 +26,73 @@ jobs:
       - run:
           name: Check Ruff Formatting
           command: ruff format --check app
+  build:
+    machine:
+      image: ubuntu-2204:current
+
+    steps:
+      - checkout
+      
+      - aws-ecr/build_and_push_image:
+          auth:
+            - aws-cli/setup:
+                role_arn: $AWS_ROLE_ARN
+          create_repo: true
+          path: ./docker
+          push_image: false
+          region: $aws_region
+          repo: $ecr_repo_name
+          tag: $image_tag
+      - run:
+          name: Tests for docker image
+          command: >
+            set -x
+
+            docker run -e "HOST=0.0.0.0" 123456789012.dkr.ecr.us-west-2.amazonaws.com/<<
+            parameters.repo >>:<< parameters.tag >> ping -V
+
+            status=$(echo "$?")
+
+            if [ "${status}" != "0" ]; then exit 1; else exit 0; fi
+
+            set +x
+      - aws-ecr/push_image:
+          region: << parameters.region >>
+          repo: << parameters.repo >>
+          tag: << parameters.tag >>
+  deploy:
+    executor: terraform/default
+
+    steps:
+      - checkout
+
+      - aws-cli/setup:
+          role_arn: $AWS_ROLE_ARN
+          region: $aws_region
+
+      - terraform/init:
+          path: ./infrastructure
+      - terraform/validate:
+          path: ./infrastructure
+      - terraform/fmt:
+          path: ./infrastructure
+      - terraform/plan:
+          path: ./infrastructure
+      - terraform/apply:
+          path: ./infrastructure
+      - terraform/plan:
+          out: 'deployment.tfplan'
+          path: ./infrastructure
+          var: >-
+            github_profile="<< pipeline.git.repo_owner >>",
+            github_repo_name="<< pipeline.git.repo_name >>",
+            aws_region="$aws_region",
+            extension_id="$extension_id",
+            image_tag="$image_tag",
+            bucket_name="$bucket_name"
+      - terraform/apply:
+          path: ./infrastructure
+          plan: 'deployment.tfplan'
       
 workflows:
   deploy-to-aws: # This is the name of the workflow, feel free to change it to better match your workflow.
@@ -33,3 +103,7 @@ workflows:
       #     test-tool: pytest
       #     requires:
       #       - code-linter
+      - build:
+          context: CircleCI_OIDC_Token
+      - deploy:
+          context: CircleCI_OIDC_Token
