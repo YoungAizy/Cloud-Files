@@ -102,3 +102,5 @@ workflows:
           context: CircleCI_OIDC_Token
       - deploy:
           context: CircleCI_OIDC_Token
+          requires:
+            - build
