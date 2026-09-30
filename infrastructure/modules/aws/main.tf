@@ -143,7 +143,7 @@ resource "aws_lambda_function_url" "api_endpoint" {
 
   cors {
     allow_credentials = true
-    allow_origins     = ["chrome-extension://${var.extension_id}"]
+    allow_origins     = ["*"]
     allow_methods     = ["*"]
     allow_headers     = ["*"]
   }
