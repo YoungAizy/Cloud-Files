@@ -84,6 +84,7 @@ jobs:
 
       - terraform/init:
           path: ./infrastructure
+          backend_config: 'region=$aws_region,bucket=$bucket_name,key=$tf_state_path'
       - terraform/validate:
           path: ./infrastructure
       - terraform/fmt:
@@ -100,8 +101,7 @@ jobs:
             github_repo_name="<< pipeline.git.repo_name >>",
             aws_region="$aws_region",
             extension_id="$extension_id",
-            image_tag="$image_tag",
-            bucket_name="$bucket_name"
+            image_tag="$image_tag"
       - terraform/apply:
           path: ./infrastructure
           plan: 'deployment.tfplan'
