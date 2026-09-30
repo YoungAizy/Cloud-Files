@@ -45,21 +45,16 @@ jobs:
           tag: $image_tag
       - run:
           name: Tests for docker image
-          command: >
+          command: |
             set -x
 
-            docker run -e "HOST=0.0.0.0" 123456789012.dkr.ecr.us-west-2.amazonaws.com/<<
-            parameters.repo >>:<< parameters.tag >> ping -V
-
-            status=$(echo "$?")
-
-            if [ "${status}" != "0" ]; then exit 1; else exit 0; fi
+            docker run -e "HOST=0.0.0.0" $ECR_REGISTRY/$ecr_repo_name:$image_tag ping -V
 
             set +x
       - aws-ecr/push_image:
-          region: << parameters.region >>
-          repo: << parameters.repo >>
-          tag: << parameters.tag >>
+          region: $aws_region
+          repo: $ecr_repo_name
+          tag: $image_tag
   deploy:
     executor: terraform/default
 
