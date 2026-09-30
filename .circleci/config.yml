@@ -68,6 +68,7 @@ jobs:
 
             set +x
       - aws-ecr/push_image:
+          account_id: $AWS_ACC_ID
           region: $aws_region
           repo: $ecr_repo_name
           tag: $image_tag
