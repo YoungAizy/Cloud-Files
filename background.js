@@ -1,32 +1,27 @@
+import { uploadToDrive } from "./api.js";
+
 //Create context menu for right clicks
 chrome.runtime.onInstalled.addListener(() => {
     chrome.contextMenus.create({
         id: "cloud-save",
-        title: "Cloud Save",
+        title: "Drive-Drop",
         contexts: ["link"]
     });
 });
 
 chrome.contextMenus.onClicked.addListener(
     (info, tab) => {
-        console.log(".....")
 
-        if (info.menuItemId !== "cloud-save") {
-            return;
-        }
+        if (info.menuItemId !== "cloud-save") return;
+        
         let message;
-        console.log("Checking for auth token...");
 
         chrome.identity.getAuthToken(
             { interactive: false },
             (token)=>{
-                console.info("token returned!");
                 if(chrome.runtime.lastError || !token){
-                    console.log("show login message", tab.id);
-                    message = "SHOW_SAVE_POPUP";
-                }
-                else{
-                    console.log("show save message", tab.id);
+                    message = "SHOW_LOGIN_POPUP";
+                }else{
                     message = "SHOW_SAVE_POPUP";
                 }
 
@@ -34,7 +29,8 @@ chrome.contextMenus.onClicked.addListener(
                     tab.id,
                     {
                         action: message,
-                        url: info.linkUrl
+                        url: info.linkUrl,
+                        token
                     }
                 );
             }
@@ -44,10 +40,13 @@ chrome.contextMenus.onClicked.addListener(
 );
 
 chrome.runtime.onMessage.addListener(
-    (msg, sender, sendResponse)=>{
+    async (msg, sender, sendResponse) =>{
         if(msg.action === "AUTHENTICATE"){
             authenticate(sendResponse);
-            console.info("Done");
+            return true;
+        }else if (msg.action === "DOWNLOAD"){
+            const result = await uploadToDrive(msg.url, msg.filename, msg.token)
+            sendResponse(result);
             return true;
         }
     }
@@ -58,8 +57,7 @@ function authenticate(sendResponse){
         { interactive: true },
         (token) => {
           if(token){
-            console.info("TOKEN returned.")
-            sendResponse(token);
+            sendResponse({token});
           }
         }
       );
