@@ -54,7 +54,7 @@
     font-size: large;
     font-weight: 600;
     color: white;
-    background-color: red;
+    background-color: #eb2525;
     cursor: pointer;
 }
 
@@ -74,7 +74,8 @@
 
 #filename, #cloud-provider {
     background-color: white;
-    padding: 4px 8px;
+    padding: 4px 10px;
+    margin-left: 2px;
 }
 
 .info-row {
