@@ -1,14 +1,11 @@
 chrome.runtime.onMessage.addListener(
     (message) => {
-        console.info("message received:", message.action)
 
         if (message.action === "SHOW_LOGIN_POPUP") {
-            console.log("logiing in...")
-            loginUI();
+            loginUI(message.url);
         }
         else if (message.action === "SHOW_SAVE_POPUP") {
-            console.log("Saving...")
-            showPopup(message.url);
+            showPopup(message.url, message.token);
         }
         else{
             console.log("Nothing....")
@@ -16,61 +13,56 @@ chrome.runtime.onMessage.addListener(
     }
 );
 
+let cachedCSS = null;
+
 async function loadStyles() {
+
+    if(cachedCSS) return cachedCSS;
+
     const url = chrome.runtime.getURL(
         "notification.css"
     );
 
     const response = await fetch(url);
+    cachedCSS = response.text();
 
-    return response.text();
+    return cachedCSS;
 }
 
-function createShadowContainer(){
+async function createShadowContainer(html){
     const container = document.createElement("div");
     container.id = "drivedrop-host";
 
-    container.style.position = "fixed";
-    container.style.top = "20px";
-    container.style.right = "20px";
     container.style.zIndex = "2147483647";
 
-    return container;
-}
-
-async function loginUI(){
-    console.log("Hellooooo");
-    const container = document.createElement("div");
-    container.id = "drivedrop-host";
-
-    container.style.position = "fixed";
-    container.style.top = "20px";
-    container.style.right = "20px";
-    container.style.zIndex = "2147483647";
-    // my styles
-    container.style.backgroundColor = "whitesmoke";
-    container.style.borderRadius = 12;
-    container.style.padding = 16;
-    html = `
-        <div class="popup">
-            <div class="close-wrapper">
-                <span class="close-btn">X</span>
-            </div>
-            <p>Authenticate with your Google account to save files to Drive.</p>
-            <button id="login-btn">Connect to G-drive</button>
-        </div>
-    `;
     const css = await loadStyles();
-    const shadow = container.attachShadow({
-        mode: "open"
-    });
+    const shadow = container.attachShadow({mode: "open"});
     
     shadow.innerHTML = `
         <style>${css}</style>
         ${html}
     `;
-    // const popup = container.firstElementChild;
-    shadow.querySelector(".close-btn").onclick = () => container.remove();
+
+    const removeContainer = () => container.remove();
+
+    return {container, shadow, removeContainer};
+}
+
+async function loginUI(url){
+    html = `
+        <div class="popup">
+            <div class="header">
+            <span style="font-weight:600; text-transform: uppercase;">Drive-Drop</span>
+                <button class="close-btn">X</button>
+            </div>
+            <p>Authenticate with your Google account to save files to Drive.</p>
+            <button id="login-btn">Connect to G-drive</button>
+        </div>
+    `;
+
+    const {container, shadow, removeContainer }= await createShadowContainer(html);
+    
+    shadow.querySelector(".close-btn").onclick = removeContainer;
     shadow.querySelector("#login-btn").onclick = () => {
         chrome.runtime.sendMessage(
             {action: "AUTHENTICATE"},
@@ -78,36 +70,31 @@ async function loginUI(){
                 chrome.storage.local.set({
                     auth: {
                       authenticated: true,
-                      email: "saunmkhize30@gmail.com"
                     }
                   });
-                  container.remove();
+                  removeContainer();
+                  showPopup(url,response.token);
             }
         )
     };
-    document.body.appendChild(container);
-    
 
+    document.body.appendChild(container);
 }
 
 function getFilename(url) {
 
     try {
-
         return new URL(url)
             .pathname
             .split("/")
             .pop() || "download";
 
     } catch {
-
         return "download";
     }
 }
 
-async function showPopup(url) {
-    console.log("popup template loading...")
-
+async function showPopup(url, token) {
     const filename = getFilename(url);
 
     const templateUrl = chrome.runtime.getURL(
@@ -117,33 +104,48 @@ async function showPopup(url) {
     const html = await fetch(templateUrl)
         .then(response => response.text());
 
-    console.info("LOADED HTML", html);
+    const {container, shadow, removeContainer} = await createShadowContainer(html);
 
-    const css = await loadStyles();
-    const popupContainer = createShadowContainer();
-    const popup = popupContainer.attachShadow({
-        mode: "open"
-    });
-    
-    popup.innerHTML = `
-        <style>${css}</style>
-        ${html}
+    shadow.querySelector("#filename").textContent = filename;
+
+    shadow.querySelector(".close-btn").onclick = removeContainer;
+
+    shadow.querySelector(".save-btn").onclick = async() => {
+        removeContainer();
+        await requestResponseUI(url, filename, token);
+    };
+        
+    document.body.appendChild(container);
+}
+
+async function requestResponseUI(url, filename, token){
+    html = `
+        <div class="popup">
+            <p id="popup-message">Requesting Download...</p>
+            <div id="loader-wrapper" class="progress-container">
+                <div class="progress-bar"></div>
+            </div>
+        </div>
     `;
 
-    // const popup =
-    //     container.firstElementChild;
+    const {container, shadow, removeContainer} = await createShadowContainer(html);
 
-    popup.querySelector(
-        "#filename"
-    ).textContent = filename;
+    chrome.runtime.sendMessage(
+        {action: "DOWNLOAD", url, filename, token},
+            result=>{
+                const message = shadow.querySelector("#popup-message");
+                const loader = shadow.querySelector("#loader-wrapper");
+                if(result.message){
+                    message.textContent = result.message;
+                    loader.classList.remove("progress-container");
+                    loader.innerHTML = `
+                        <button class="save-btn" id="close-button">Close</button>
+                    `;
+                
+                    shadow.querySelector("#close-button").onclick = removeContainer;
+                }
+            }
+    );
 
-    popup.querySelector(".close-btn")
-        .onclick = () => popup.remove();
-
-    popup.querySelector(".save-btn")
-        .onclick = () => {
-            uploadToDrive(url, filename, popup);
-        };
-        
-    document.body.appendChild(popupContainer);
+    document.body.appendChild(container);
 }
