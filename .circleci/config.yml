@@ -97,7 +97,9 @@ jobs:
             github_repo_name="<< pipeline.git.repo_name >>",
             aws_region="$aws_region",
             extension_id="$extension_id",
-            image_tag="$image_tag"
+            image_tag="$image_tag",
+            container_host="$container_host",
+            container_port="$container_port"
       - terraform/apply:
           path: ./infrastructure
           plan: 'deployment.tfplan'
