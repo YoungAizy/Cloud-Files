@@ -126,8 +126,12 @@ resource "aws_lambda_function" "fastapi_lambda" {
 
   environment {
     variables = {
-      ENVIRONMENT = var.environment
+      STAGE        = var.environment
+      HOST         = var.container_host
+      EXTENSION_ID = var.extension_id
+      PORT         = var.container_port
     }
+
   }
 
   depends_on = [

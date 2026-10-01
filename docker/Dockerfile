@@ -3,7 +3,7 @@ FROM python:3.11-slim
 # Copy the AWS Lambda Web Adapter binary into my image
 COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:0.8.3 /lambda-adapter /opt/extensions/lambda-adapter
 
-ENV HOST=127.0.0.1 STAGE='DEV' EXTENSION_ID="" APP_NAME='Drive-Save'
+ENV HOST=127.0.0.1 STAGE='DEV' EXTENSION_ID="" APP_NAME='Drive-Save' PORT=8000
 WORKDIR /src
 EXPOSE 8000
 

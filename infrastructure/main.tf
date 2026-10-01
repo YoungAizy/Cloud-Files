@@ -1,10 +1,12 @@
 module "aws_backend" {
   source = "./modules/aws"
 
-  app_name     = var.app_name
-  environment  = var.environment
-  image_tag    = var.image_tag
-  extension_id = var.extension_id
+  app_name       = var.app_name
+  environment    = var.environment
+  image_tag      = var.image_tag
+  extension_id   = var.extension_id
+  container_host = var.container_host
+  container_port = var.container_port
 }
 
 # module "github_setup" {

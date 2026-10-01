@@ -25,6 +25,17 @@ variable "extension_id" {
   description = "The ID of the chrome extension calling this api service."
 }
 
+# --- Container Environment Variables ---
+variable "container_host" {
+  type        = string
+  description = "The IP address to bind the fastapi server to."
+}
+
+variable "container_port" {
+  type        = string
+  description = "The port the Fastapi server should listen to internally to route traffic from lambda."
+}
+
 # --- Github Configuration ---
 variable "github_profile" {
   type        = string
