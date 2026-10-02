@@ -105,6 +105,7 @@ resource "aws_ecr_repository_policy" "lambda_ecr_policy" {
         Action = [
           "ecr:BatchGetImage",
           "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchCheckLayerAvailability"
         ]
       }
     ]
