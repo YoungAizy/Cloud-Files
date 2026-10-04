@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.core.logger import logger
 from app.exceptions.custom_errors import FileTooLargeError, GoogleUploadError
 from app.middleware.authentication import get_access_token
 from app.models import DownloadRequest
@@ -42,6 +43,8 @@ async def download(
     try:
         await validate_url(str(request.url))
     except Exception as e:
+        logger.exception(f"Validation Error: {e}")
+        
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
         ) from e
@@ -80,12 +83,16 @@ async def download_file_in_background(request: DownloadRequest, access_token: st
         await send_completion_email(access_token, True, uploaded)
 
     except (RuntimeError, FileTooLargeError, GoogleUploadError) as e:
+        logger.exception(e)
+        
         await send_completion_email(
             access_token,
             False,
             {"download_link": request.url, "filename": filename, "error": str(e)},
         )
-    except Exception:
+    except Exception as ex:
+        logger.exception(f"Exception: {e}")
+        
         await send_completion_email(
             access_token,
             False,

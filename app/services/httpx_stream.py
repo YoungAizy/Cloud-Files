@@ -1,3 +1,4 @@
+from app.core.logger import logger
 from app.exceptions.custom_errors import FileTooLargeError
 
 
@@ -13,12 +14,16 @@ class HTTPXStreamIterator:
     async def downloader(self, CHUNK_SIZE: int, LIMIT: int):
         buffer = bytearray()
         downloaded = 0
+        
+        logger.info("Downloader Task started.")
 
         async for data in self.response.aiter_bytes(CHUNK_SIZE):
             buffer.extend(data)
             downloaded += len(data)
 
             if downloaded > LIMIT:
+                logger.error("File Stream Exceeded limit.")
+                
                 raise FileTooLargeError(
                     "File exceeded the size limit of 1GB while streaming."
                 )
@@ -31,3 +36,4 @@ class HTTPXStreamIterator:
 
         # Tell uploader there are no more chunks
         await self.queue.put(None)
+        logger.info("Downloading Finished")

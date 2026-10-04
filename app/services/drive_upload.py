@@ -4,6 +4,7 @@ import httpx
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
+from app.core.logger import logger
 from app.exceptions.custom_errors import FileTooLargeError, GoogleUploadError
 from app.services.httpx_stream import HTTPXStreamIterator
 
@@ -52,6 +53,8 @@ async def create_upload_session(
     response.raise_for_status()
 
     upload_url = response.headers.get("Location")
+    
+    logger.info(f"Upload Session URL: {upload_url}")
 
     if not upload_url:
         raise RuntimeError("Google Drive did not return an upload URL")
@@ -122,6 +125,8 @@ async def upload_g_drive(
 
         async def uploader():
             uploaded_bytes = 0
+            
+            logger.info("Initiating Google Drive Upload.")
 
             while True:
                 chunk = await queue.get()
@@ -170,7 +175,8 @@ async def upload_g_drive(
 
             return results[1]
 
-        except Exception:
+        except Exception as ex:
+            logger.exception(f"The Queue Encountered an Error: {ex}")
             # Stop whichever task is still running
             for task in (downloader_task, uploader_task):
                 if not task.done():
