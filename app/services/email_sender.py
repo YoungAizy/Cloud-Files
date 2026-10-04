@@ -1,9 +1,9 @@
 import base64
 from email.message import EmailMessage
 
-from app.core.logger import logger
-
 import httpx
+
+from app.core.logger import logger
 
 GMAIL_SEND_URL = "https://gmail.googleapis.com/gmail/v1/users/me/messages/send"
 
