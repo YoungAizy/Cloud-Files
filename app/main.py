@@ -91,7 +91,7 @@ async def download_file_in_background(request: DownloadRequest, access_token: st
             {"download_link": request.url, "filename": filename, "error": str(e)},
         )
     except Exception as ex:
-        logger.exception(f"Exception: {e}")
+        logger.exception(f"Exception: {ex}")
         
         await send_completion_email(
             access_token,
