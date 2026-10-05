@@ -1,0 +1,58 @@
+---
+- name: Deploy App to AWS EC2
+  hosts: fastapi_servers
+  become: true # Runs commands as root user using sudo
+  vars:
+    aws_region: "us-east-1"
+    ecr_registry: ""
+    image_name: "fastapi-app"
+    image_tag: "dev"
+    extension_id: ""
+    docker_host: "0.0.0.0"
+    port: 8000
+    environment: "dev"
+  
+  tasks:
+    - name: Ensure Docker is installed
+      ansible.builtin.dnf:
+        name:
+          - docker
+        state: present
+        update_cache: true 
+    
+    - name: Ensure Docker service is started an enabled
+      ansible.builtin.sytemd:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Sign into AWS ECR 
+      ansible.builtin.shell: |
+        aws ecr get-login-password --region {{aws_region}} | docker login --username AWS --password-stdin {{ecr_registry}}
+      changed_when: true 
+    
+    - name: Pull latest image from ECR 
+      ansible.builtin.command: "docker pull {{ecr_registry}}/{{image_name}}:{{image_tag}}"
+      changed_when: true 
+
+    - name: Check if there's a container running
+      ansible.builtin.command: "docker ps -a -q --filter name=cloud-save-server"
+      register: existing_container
+      changed_when: false 
+
+    - name: Stop and remove old container
+      ansible.builtin.shell: |
+        docker stop cloud-save-server || true
+        docker rm cloud-save-server || true 
+      when: existing_container.stdout != ""
+      changed_when: true
+
+    - name: Launch updated app
+      ansible.builtin.shell: >
+        docker run -d -p {{port}}:8000 
+        -e HOST="{{docker_host}}" 
+        -e EXTENSION_ID="{{extension_id}}" 
+        -e STAGE="{{environment}}"
+        --name cloud-save-server
+        --restart unless-stopped
+        {{ecr_registry}}/{{image_name}}:{{image_tag}}
