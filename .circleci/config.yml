@@ -99,7 +99,8 @@ jobs:
             extension_id="$extension_id",
             image_tag="$image_tag",
             container_host="$container_host",
-            container_port="$container_port"
+            container_port="$container_port",
+            instance_type="$ec2_instance"
       - terraform/apply:
           path: ./infrastructure/terraform
           plan: 'deployment.tfplan'
