@@ -27,7 +27,7 @@ variable "image_tag" {
   description = "The specific Docker image tag passed by GitHub Actions"
 }
 
-variable "instance_type"{
+variable "instance_type" {
   type        = string
   description = "The AWS EC2 instance type"
 }
