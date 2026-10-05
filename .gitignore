@@ -3,11 +3,18 @@ app/__pycache__
 app/*/__pycache__
 tests/__pycache__
 .env
+my-env
+app.log
 
 # Terraform
-infrastructure/.terraform
-infrastructure/.terraform.*
-infrastructure/*.tfplan
-infrastructure/*.tfstate
-infrastructure/*.tfstate.*
-infrastructure/*.tfvars
+infrastructure/terraform/.terraform
+infrastructure/terraform/.terraform.*
+infrastructure/terraform/*.tfplan
+infrastructure/terraform/*.tfstate
+infrastructure/terraform/*.tfstate.*
+infrastructure/terraform/*.tfvars
+
+# Ansible
+infrastructure/ansible/.vagrant
+# --- Use hosts.ini for local development, it will be dynamically created by ci/cd pipeline
+infrastructure/ansible/hosts.ini
