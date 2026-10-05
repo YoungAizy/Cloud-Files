@@ -3,10 +3,12 @@ module "aws_backend" {
 
   app_name       = var.app_name
   environment    = var.environment
-  image_tag      = var.image_tag
   extension_id   = var.extension_id
+  image_tag      = var.image_tag
   container_host = var.container_host
   container_port = var.container_port
+  aws_region     = var.aws_region
+  instance_type  = var.instance_type
 }
 
 # module "github_setup" {

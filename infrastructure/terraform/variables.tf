@@ -1,7 +1,13 @@
+# App variables
 variable "app_name" {
   type        = string
   description = "The application name used for resource naming"
   default     = "cloud-save-backend"
+}
+
+variable "extension_id" {
+  type        = string
+  description = "The ID of the chrome extension calling this api service."
 }
 
 variable "environment" {
@@ -10,6 +16,7 @@ variable "environment" {
   default     = "dev"
 }
 
+# AWS Variables
 variable "aws_region" {
   type    = string
   default = "us-east-1"
@@ -20,9 +27,9 @@ variable "image_tag" {
   description = "The specific Docker image tag passed by GitHub Actions"
 }
 
-variable "extension_id" {
+variable "instance_type"{
   type        = string
-  description = "The ID of the chrome extension calling this api service."
+  description = "The AWS EC2 instance type"
 }
 
 # --- Container Environment Variables ---
