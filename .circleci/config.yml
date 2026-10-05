@@ -26,7 +26,7 @@ jobs:
       - run:
           name: Check Ruff Formatting
           command: ruff format --check app
-  build:
+  build-and-push:
     machine:
       image: ubuntu-2204:current
 
@@ -72,7 +72,7 @@ jobs:
           region: $aws_region
           repo: $ecr_repo_name
           tag: $image_tag
-  deploy:
+  provision-infrastructure:
     executor: terraform/default
 
     steps:
@@ -104,6 +104,45 @@ jobs:
           path: ./infrastructure
           plan: 'deployment.tfplan'
       
+      - persist_to_workspace:
+          root: .
+          paths:
+            - infrastructure/ansible/hosts.ini
+
+  deploy:
+    docker:
+      - image: cimg/python:3.11
+
+    steps:
+      - checkout
+
+      - attach_workspace:
+          at: .
+
+      - aws-cli/setup:
+          role_arn: $AWS_ROLE_ARN
+          region: $aws_region
+      
+      - run:
+          name: Install Ansible and run playbook
+          command: |
+            sudo apt-get update -y
+            sudo apt-get install ansible -y
+
+            export ANSIBLE_HOST_KEY_CHECKING=False
+            curl "https://amazonaws.com" -o "session-manager-plugin.deb"
+            sudo dpkg -i session-manager-plugin.deb
+
+            # Install Ansible AWS Collection
+            ansible-galaxy collection install community.aws
+
+            cd infrastructure/ansible && ansible-playbook -i hosts.ini deploy.yml -e \
+              "aws_region=$aws_region ecr_registry=$ECR_REGISTRY \
+              image_name=$ecr_repo_name image_tag=$image_tag \
+              extension_id=$extension_id docker_host=$container_host \
+              port=$container_port environment=dev"
+
+              
 workflows:
   deploy-to-aws: # This is the name of the workflow, feel free to change it to better match your workflow.
     # Inside the workflow, you define the jobs you want to run.
@@ -113,9 +152,12 @@ workflows:
       #     test-tool: pytest
       #     requires:
       #       - code-linter
-      - build:
+      - build-and-push:
           context: CircleCI_OIDC_Token
-      - deploy:
+      - provision-infrastructure:
           context: CircleCI_OIDC_Token
           requires:
-            - build
+            - build-and-push
+      - deploy:
+          requires:
+            - provision-infrastructure
