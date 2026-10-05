@@ -144,12 +144,11 @@ resource "aws_internet_gateway" "cloud_save_igw" {
 
 resource "aws_route_table" "public_route_table" {
   vpc_id = aws_vpc.cloud_save_vpc.id
-  route  = [
-    {
+  route  {
       cidr_block = "0.0.0.0/0"
       gateway_id = aws_internet_gateway.cloud_save_igw.id
-    }
-  ]
+  }
+  
   tags   = { Name = var.app_name }
 }
 
@@ -228,9 +227,10 @@ resource "aws_instance" "ec2_instance" {
 
 
 resource "local_file" "ansible_inventory" {
-  filename = "${path.module}/../../infrastructure/ansible/hosts.ini"
+  filename = "${path.module}/../../../ansible/hosts.ini"
 
-  content  = templatefile("S{path.module}/../../infrastructure/ansible/hosts.tpl", {
-    public_ip    = aws_instance.ec2_instance.id
+  content  = templatefile("${path.module}/../../../ansible/hosts.tpl", {
+    instance_id = aws_instance.ec2_instance.id
+    aws_region  = var.aws_region
   })
 }
