@@ -83,15 +83,15 @@ jobs:
           region: $aws_region
 
       - terraform/init:
-          path: ./infrastructure
+          path: ./infrastructure/terraform
           backend_config: 'region=$aws_region,bucket=$bucket_name,key=$tf_state_path'
       - terraform/validate:
-          path: ./infrastructure
+          path: ./infrastructure/terraform
       - terraform/fmt:
-          path: ./infrastructure
+          path: ./infrastructure/terraform
       - terraform/plan:
           out: 'deployment.tfplan'
-          path: ./infrastructure
+          path: ./infrastructure/terraform
           var: >-
             github_profile="<< pipeline.git.repo_owner >>",
             github_repo_name="<< pipeline.git.repo_name >>",
@@ -101,7 +101,7 @@ jobs:
             container_host="$container_host",
             container_port="$container_port"
       - terraform/apply:
-          path: ./infrastructure
+          path: ./infrastructure/terraform
           plan: 'deployment.tfplan'
       
       - persist_to_workspace:
