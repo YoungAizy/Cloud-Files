@@ -1,6 +1,6 @@
 {
-    "name": "Drive-Drop",
-    "description": "An file capture tool that combines a Chrome extension with a FastAPI backend to securely transfer internet files to users' Google Drive accounts.",
+    "name": "Cloud Save",
+    "description": "Download files anywhere from the internet directly to you Google Drive.",
     "version": "0.1.0",
     "manifest_version": 3,
     "icons": {
@@ -16,8 +16,7 @@
         "storage"
     ],
     "host_permissions": [
-        "<all_urls>",
-        "http://localhost:8000/*"
+        "<all_urls>"
     ],
     "background": {
         "service_worker": "background.js",
