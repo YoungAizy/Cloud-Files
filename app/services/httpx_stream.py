@@ -14,7 +14,7 @@ class HTTPXStreamIterator:
     async def downloader(self, CHUNK_SIZE: int, LIMIT: int):
         buffer = bytearray()
         downloaded = 0
-        
+
         logger.info("Downloader Task started.")
 
         async for data in self.response.aiter_bytes(CHUNK_SIZE):
@@ -23,7 +23,7 @@ class HTTPXStreamIterator:
 
             if downloaded > LIMIT:
                 logger.error("File Stream Exceeded limit.")
-                
+
                 raise FileTooLargeError(
                     "File exceeded the size limit of 1GB while streaming."
                 )

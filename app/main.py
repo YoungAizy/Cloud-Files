@@ -44,7 +44,7 @@ async def download(
         await validate_url(str(request.url))
     except Exception as e:
         logger.exception(f"Validation Error: {e}")
-        
+
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
         ) from e
@@ -84,7 +84,7 @@ async def download_file_in_background(request: DownloadRequest, access_token: st
 
     except (RuntimeError, FileTooLargeError, GoogleUploadError) as e:
         logger.exception(e)
-        
+
         await send_completion_email(
             access_token,
             False,
@@ -92,7 +92,7 @@ async def download_file_in_background(request: DownloadRequest, access_token: st
         )
     except Exception as ex:
         logger.exception(f"Exception: {ex}")
-        
+
         await send_completion_email(
             access_token,
             False,

@@ -12,7 +12,7 @@ sub = "Drive-Drop Upload"
 
 async def get_user_email(access_token: str) -> str:
     logger.info("Fetching User Email.")
-    
+
     headers = {
         "Authorization": f"Bearer {access_token}",
     }
@@ -60,8 +60,10 @@ async def send_completion_email(access_token: str, is_successful: bool, payload_
     message["Subject"] = subject
     message.set_content(body)
 
-    logger.info(f"Success Status: {is_successful}\n Sending Completion E-mail: {message}")
-    
+    logger.info(
+        f"Success Status: {is_successful}\n Sending Completion E-mail: {message}"
+    )
+
     encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
 
     payload = {"raw": encoded_message}

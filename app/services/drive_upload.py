@@ -53,7 +53,7 @@ async def create_upload_session(
     response.raise_for_status()
 
     upload_url = response.headers.get("Location")
-    
+
     logger.info(f"Upload Session URL: {upload_url}")
 
     if not upload_url:
@@ -125,7 +125,7 @@ async def upload_g_drive(
 
         async def uploader():
             uploaded_bytes = 0
-            
+
             logger.info("Initiating Google Drive Upload.")
 
             while True:
