@@ -133,7 +133,7 @@ resource "aws_subnet" "cloud_save_public" {
   vpc_id                  = aws_vpc.cloud_save_vpc.id
   cidr_block              = "10.0.1.0/24"
   map_public_ip_on_launch = true
-  availability_zone       = var.aws_region
+  availability_zone       = "${var.aws_region}a"
   tags                    = { Name = var.app_name }
 }
 
