@@ -4,7 +4,7 @@ import { uploadToDrive } from "./api.js";
 chrome.runtime.onInstalled.addListener(() => {
     chrome.contextMenus.create({
         id: "cloud-save",
-        title: "Drive-Drop",
+        title: "Cloud Save",
         contexts: ["link"]
     });
 });
