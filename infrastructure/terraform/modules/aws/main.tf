@@ -193,7 +193,7 @@ data "aws_ami" "amazon_ami" {
   owners      = ["amazon"]
   filter {
     name   = "name"
-    values = ["al2023-ami-2023.*-86_64"]
+    values = ["al2023-ami-2023.*-x86_64"]
   }
   filter {
     name   = "virtualization-type"
@@ -204,7 +204,7 @@ data "aws_ami" "amazon_ami" {
 resource "aws_instance" "ec2_instance" {
   ami           = data.aws_ami.amazon_ami.id
   instance_type = var.instance_type
-  # key_name      = var.key_pair_name
+  key_name      = "cloud-save-key"
 
   iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
 
