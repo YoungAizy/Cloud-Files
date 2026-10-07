@@ -11,6 +11,10 @@
     docker_host: "0.0.0.0"
     port: 8000
     environment: "dev"
+    # Used by aws_ssm connection
+    ansible_connection: aws_ssm
+    ansible_aws_ssm_bucket_name: "" 
+    ansible_aws_ssm_region: "us-east-1"
   
   tasks:
     - name: Ensure Docker is installed

@@ -143,7 +143,8 @@ jobs:
               "aws_region=$aws_region ecr_registry=$ECR_REGISTRY \
               image_name=$ecr_repo_name image_tag=$image_tag \
               extension_id=$extension_id docker_host=$container_host \
-              port=$container_port environment=dev"
+              port=$container_port environment=dev \
+              ansible_aws_ssm_region=$aws_region ansible_aws_ssm_bucket_name=$bucket_name"
 
               
 workflows:
