@@ -1,5 +1,5 @@
 export const CONFIG = {
     BACKEND_URL: "http://localhost:8000", // For development
-    REMOTE_BACKEND: "https://eb7vdnnhpdpdt4c7y4utwahz340qksgx.lambda-url.af-south-1.on.aws" //Production backend
+    REMOTE_BACKEND: "http://ec2-15-240-233-196.af-south-1.compute.amazonaws.com:8080" //Production backend
 };
   
