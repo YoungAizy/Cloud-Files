@@ -130,14 +130,13 @@ jobs:
             sudo apt-get update -y
             sudo apt-get install ansible -y
 
-            export ANSIBLE_HOST_KEY_CHECKING=False
             curl "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64bit/session-manager-plugin.deb" -o "session-manager-plugin.deb"
             sudo dpkg -i session-manager-plugin.deb
 
             # Install Ansible AWS Collection
             ansible-galaxy collection install community.aws
 
-            cd infrastructure/ansible && ansible-playbook -i hosts.ini deploy.yml -e \
+            cd infrastructure/ansible && ansible-playbook deploy.yml -e \
               "aws_region=$aws_region ecr_registry=$ECR_REGISTRY \
               image_name=$ecr_repo_name image_tag=$image_tag \
               extension_id=$extension_id docker_host=$container_host \
