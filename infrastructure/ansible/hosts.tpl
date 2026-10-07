@@ -1,5 +1,5 @@
 [fastapi_servers]
-${instance_id}    ansible_user=ec2-user
+${instance_id}
 
 [fastapi_servers:vars]
 ansible_connection=community.aws.aws_ssm
