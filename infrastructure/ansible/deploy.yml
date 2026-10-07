@@ -20,8 +20,8 @@
         state: present
         update_cache: true 
     
-    - name: Ensure Docker service is started an enabled
-      ansible.builtin.sytemd:
+    - name: Ensure Docker service is started and enabled
+      ansible.builtin.systemd:
         name: docker
         state: started
         enabled: true
