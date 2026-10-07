@@ -9,8 +9,8 @@
     image_tag: "dev"
     extension_id: ""
     docker_host: "0.0.0.0"
-    port: 8000
-    environment: "dev"
+    instance_port: 8000
+    env: "dev"
     # Used by aws_ssm connection
     ansible_connection: aws_ssm
     ansible_aws_ssm_bucket_name: "" 
@@ -53,10 +53,10 @@
 
     - name: Launch updated app
       ansible.builtin.shell: >
-        docker run -d -p {{port}}:8000 
+        docker run -d -p {{instance_port}}:8000 
         -e HOST="{{docker_host}}" 
         -e EXTENSION_ID="{{extension_id}}" 
-        -e STAGE="{{environment}}"
+        -e STAGE="{{env}}"
         --name cloud-save-server
         --restart unless-stopped
         {{ecr_registry}}/{{image_name}}:{{image_tag}}
