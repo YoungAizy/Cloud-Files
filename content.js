@@ -52,7 +52,7 @@ async function loginUI(url){
     html = `
         <div class="popup">
             <div class="header">
-            <span style="font-weight:600; text-transform: uppercase;">Drive-Drop</span>
+            <span style="font-weight:600; text-transform: uppercase;">Cloud Save</span>
                 <button class="close-btn">X</button>
             </div>
             <p>Authenticate with your Google account to save files to Drive.</p>
